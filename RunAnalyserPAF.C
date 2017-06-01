@@ -1,9 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  RunAnalyserPAF("sampleName", "TheAnalysis", nSlots);
-//  RunAnalyserPAF("sampleName", "TheAnalysis", nSlots, nEvents = 0, weight = 1);
-//
-//  To do: Automatic run on all _ext files
+//  RunAnalyserPAF("sampleName", "TheAnalysis", nSlots, nEvents = 0);
 //
 ////////////////////////////////////////////////////////////////////////////////
 R__LOAD_LIBRARY(DatasetManager/DatasetManager.C+)
@@ -12,9 +10,13 @@ R__LOAD_LIBRARY(DatasetManager/DatasetManager.C+)
 
 Bool_t IsMCatNLO(TString sampleName);
 void GetCount(vector<TString> Files, Bool_t IsData = false);
-void RunAnalyserPAF(TString sampleName  = "TTbar_Powheg", TString Selection = "StopDilep", Int_t nSlots = 1, Long64_t nEvents = 0, Long64_t FirstEvent = 0, Float_t ThisWeight = 1.0, Int_t stopMass = 0, Int_t lspMass  = 0);
+void RunAnalyserPAF(TString sampleName  = "TTbar_Powheg", TString Selection = "StopDilep", Int_t nSlots = 1, Long64_t nEvents = 0, Long64_t FirstEvent = 0, Float_t uxsec = 1.0, Int_t stopMass = 0, Int_t lspMass  = 0);
 Float_t GetSMSnorm(Int_t mStop, Int_t mLsp);
 Double_t GetStopXSec(Int_t StopMass);
+vector<TString> GetAllFiles(TString path, TString  filename = "");
+void CheckTreesInDir(TString path, TString treeName = "tree", Int_t verbose = 0);
+void CheckTree(TString filename, TString treeName = "tree", Int_t verbose = 0);
+//Float_t* GetCountLHE(std::vector<TString> Files, Float_t a[]);
 
 vector<TString> Files;
 Double_t SumOfWeights;
@@ -22,13 +24,21 @@ Long64_t Count;
 Long64_t nTrueEntries;
 Float_t xsec;
 Bool_t verbose = true;
+const Int_t nLHEWeight = 248;
 
-enum             sel         {iStopSelec, iTopSelec, iTWSelec, iWWSelec, ittDMSelec, ittHSelec, nSel};
-const TString tagSel[nSel] = {"Stop", "        Top",     "TW",     "WW",     "ttDM",     "ttH"      };
+enum             sel         {iStopSelec, iTopSelec, iTWSelec, iWWSelec, ittDMSelec, ittHSelec, iWZSelec, i4tSelec, nSel};
+const TString tagSel[nSel] = {"Stop",         "Top",     "TW",     "WW",     "ttDM",     "ttH",   "WZ",    "tttt" };
 
-void RunAnalyserPAF(TString sampleName, TString Selection, Int_t nSlots, Long64_t nEvents, Long64_t FirstEvent, Float_t ThisWeight,	Int_t stopMass, Int_t lspMass) {
+void RunAnalyserPAF(TString sampleName, TString Selection, Int_t nSlots, Long64_t nEvents, Long64_t FirstEvent, Float_t uxsec,	Int_t stopMass, Int_t lspMass) {
 
-	Int_t iChunck = Int_t(ThisWeight);
+  if(sampleName.BeginsWith("Check:")){
+    verbose = false;
+    sampleName.ReplaceAll("Check:", "");
+    CheckTreesInDir(sampleName, Selection, nSlots);
+    return;
+  }
+
+	Int_t iChunk = Int_t(uxsec);
 	if(FirstEvent != 0) verbose = false;
   TString orig_sampleName = sampleName;
 
@@ -38,6 +48,7 @@ void RunAnalyserPAF(TString sampleName, TString Selection, Int_t nSlots, Long64_
 	Count = 0;
 	nTrueEntries = 0;
 	xsec = 0;
+  //Float_t arr[nLHEWeight]; Float_t *CountLHE;
 
 
   TString WorkingDir = gSystem->WorkingDirectory();
@@ -56,6 +67,7 @@ void RunAnalyserPAF(TString sampleName, TString Selection, Int_t nSlots, Long64_
   else if(Selection == "TW"        || Selection == "tW"      ) sel = iTWSelec;
   else if(Selection == "ttDM"      || Selection == "ttMET"   ) sel = ittDMSelec;
   else if(Selection == "ttH"       || Selection == "TTH"     ) sel = ittHSelec;
+  else if(Selection == "tttt"      || Selection == "4t"      ) sel = i4tSelec;
   else if(Selection == "WW"                                  ) sel = iWWSelec;
   else{ cout << "\033[1;31m >>>> WRONG SELECTION <<<< \033[0m\n"; return;}
 	cout << "\n" << endl;
@@ -69,6 +81,7 @@ void RunAnalyserPAF(TString sampleName, TString Selection, Int_t nSlots, Long64_
 
   // Tab in the spreadsheet https://docs.google.com/spreadsheets/d/1b4qnWfZrimEGYc1z4dHl21-A9qyJgpqNUbhOlvCzjbE
   dm->SetTab("DR80XSummer16asymptoticMiniAODv2_2");
+  //dm->SetTab("DR80XSummer16asymptoticMiniAODv2_2_noSkim");
   
   TString pathToFiles = dataPath + dm->FindLocalFolder();
   // Deal with data samples
@@ -77,15 +90,15 @@ void RunAnalyserPAF(TString sampleName, TString Selection, Int_t nSlots, Long64_
     G_IsData = true;
     TString datasuffix[] = { 
       "16B_03Feb2017",
-  /*    "16C_03Feb2017",
+      "16C_03Feb2017",
       "16D_03Feb2017",
       "16E_03Feb2017",
       "16F_03Feb2017",
       "16G_03Feb2017",
       "16H_03Feb2017_v2",
-      "16H_03Feb2017_v3"*/
+      "16H_03Feb2017_v3"
     };
-    const unsigned int nDataSamples = 1;//8;
+    const unsigned int nDataSamples = 8;
     for(unsigned int i = 0; i < nDataSamples; i++) {
       TString asample = Form("Tree_%s_%s",sampleName.Data(), datasuffix[i].Data());
       //myProject->AddDataFiles(dm->GetRealDataFiles(asample));
@@ -102,14 +115,16 @@ void RunAnalyserPAF(TString sampleName, TString Selection, Int_t nSlots, Long64_
 		if(sampleName.BeginsWith("LocalFile:")){ // LocalFile
 			theSample = sampleName.ReplaceAll("LocalFile:", ""); 
 			if(verbose) cout << " >>> Analysing a local sample: " << theSample << endl;
-			sampleName = TString( theSample(theSample.Last('/')+1, theSample.Sizeof())).ReplaceAll(".root", "").ReplaceAll("Tree_", "");
-			//myProject->AddDataFile(theSample);
-			G_Event_Weight = ThisWeight;
-      xsec = 1;
+			sampleName = TString( theSample(theSample.Last('/')+1, theSample.Sizeof())).ReplaceAll(".root", "").ReplaceAll("Tree_", "").ReplaceAll("_*", "").ReplaceAll("*", "");
+			//Files.push_back(theSample);
+			Files = GetAllFiles(theSample);
+      GetCount(Files, G_IsData);
+      xsec = uxsec;
+      G_Event_Weight = xsec/Count;
 		}
-		else if(sampleName.BeginsWith("T2tt:")){ // T2tt sample
-			theSample = sampleName.ReplaceAll("T2tt:", "");
-			if(verbose) cout << " >>> Analysing a T2tt sample: " << theSample << endl;
+		else if(sampleName.BeginsWith("Scan:")){ // T2tt sample
+			theSample = sampleName.ReplaceAll("Scan:", "");
+			if(verbose) cout << " >>> Analysing a scan... : " << theSample << endl;
 			//myProject->AddDataFiles(dm->GetRealDataFiles(theSample));
       std::vector<TString> tempFiles = dm->GetRealDataFiles(theSample);
       Files.insert(Files.end(), (tempFiles).begin(), (tempFiles).end());
@@ -137,15 +152,17 @@ void RunAnalyserPAF(TString sampleName, TString Selection, Int_t nSlots, Long64_
 				//myProject->AddDataFiles(dm->GetFiles()); 
 				Files.insert(Files.end(), (dm->GetFiles()).begin(), (dm->GetFiles()).end());
 				xsec    = dm->GetCrossSection();
+				if(uxsec != 1) xsec    = uxsec;
 			}
 			GetCount(Files);
 			if(IsMCatNLO(sampleName)){
 				G_IsMCatNLO = true;
-				if(verbose) cout << " >>> This is a aMCatNLO sample!!" << endl;
+				if(verbose) cout << " >>> This is an aMCatNLO sample!!" << endl;
 				G_Event_Weight = xsec/SumOfWeights;
 			}
 			else G_Event_Weight = xsec/Count;
 		}
+      if(sampleName.Contains("FastSim")) G_IsFastSim = true;
 	}
 	if(verbose){
 		//cout << "\033[1;30m=================================================\033[0m\n";
@@ -158,32 +175,41 @@ void RunAnalyserPAF(TString sampleName, TString Selection, Int_t nSlots, Long64_
 		if(G_IsMCatNLO) cout << Form("\033[1;34m #### Sum of weights   = %g \033[0m\n", SumOfWeights);
 		cout << "\033[1;30m=================================================\033[0m\n";
 	}
-
+        
+        // ------->>>>> Termporary solution:
+        //if(sampleName.Contains("PowhegLHE")) CountLHE = GetCountLHE(Files, arr);
+        
+        
 	// Output dir and tree name
 	//----------------------------------------------------------------------------
-	TString outputDir = "./" + tagSel[sel] + "_temp";
+	
+        TString username(gSystem->GetUserInfo(gSystem->GetUid())->fUser);
+        TString outPrefix("./");
+        if(username=="vischia") outPrefix="/pool/cienciasrw/userstorage/pietro/tttt/2l_skim_wmt2/";
+        // Insert here your conditional. Si no, por defecto es ./
+        TString outputDir = outPrefix + tagSel[sel] + "_temp";
 	if(sampleName.BeginsWith("T2tt")) outputDir += "/T2tt/";
 	gSystem->mkdir(outputDir, kTRUE);
 	if(sampleName.Contains("_ext2")) sampleName.ReplaceAll("_ext2",""); 
 	if(sampleName.Contains("_ext"))  sampleName.ReplaceAll("_ext",""); 
-
+        
 	//if     (nEvents > 0 && FirstEvent == 0) myProject->SetNEvents(nEvents);
-  if(nEvents < 0 && FirstEvent == 0){ // Divide the sample
-    Int_t nChunks = TMath::Abs(nEvents);
-    Int_t firstEvent = 0;
-    cout << endl;
-    cout << Form("\033[0;97m >>> The sample is going to be divided in %i chuncks!! \033[0m\n\n", nChunks);
-    for(Int_t i = 0; i < nChunks; i++){
-			firstEvent = (nTrueEntries/nChunks)*i+1;
-      nEvents = nTrueEntries/nChunks;
-			if(i == nChunks - 1) nEvents = nTrueEntries-firstEvent;
-			RunAnalyserPAF(orig_sampleName, Selection, nSlots, nEvents, firstEvent, i, stopMass , lspMass);
-      //gSystem->Exec("resetpaf -a");
-      //gSystem->Exec("resetpaf -a");
+        if(nEvents < 0 && FirstEvent == 0){ // Divide the sample
+          Int_t nChunks = TMath::Abs(nEvents);
+          Int_t firstEvent = 0;
+          cout << endl;
+          cout << Form("\033[0;97m >>> The sample is going to be divided in %i chunks!! \033[0m\n\n", nChunks);
+          for(Int_t i = 0; i < nChunks; i++){
+            firstEvent = (nTrueEntries/nChunks)*i+1;
+            nEvents = nTrueEntries/nChunks;
+            if(i == nChunks - 1) nEvents = nTrueEntries-firstEvent;
+            RunAnalyserPAF(orig_sampleName, Selection, nSlots, nEvents, firstEvent, i, stopMass , lspMass);
+            //gSystem->Exec("resetpaf -a");
+            //gSystem->Exec("resetpaf -a");
     }
-    cout << "\033[1;31m >>> Merging trees... \n\033[0m";
-    TString haddCommand = "hadd " + outputDir + "/Tree_" + sampleName + ".root " + outputDir + "/Tree_" + sampleName + "_*.root";
-    gSystem->Exec(haddCommand);
+          cout << "\033[1;31m >>> Merging trees... \n\033[0m";
+          TString haddCommand = "hadd " + outputDir + "/Tree_" + sampleName + ".root " + outputDir + "/Tree_" + sampleName + "_*.root";
+          gSystem->Exec(haddCommand);
     cout << "\033[1;37m================================================\n\033[0m";
     cout << "\033[1;37m >>>>> >>>> >>> >> > Finito! < << <<< <<<< <<<<<\n\033[0m";
     cout << "\033[1;37m================================================\n\033[0m";
@@ -191,19 +217,30 @@ void RunAnalyserPAF(TString sampleName, TString Selection, Int_t nSlots, Long64_
   }
   else if(FirstEvent != 0){
     if(FirstEvent == 1) FirstEvent = 0;
-		cout << Form("\033[1;36m >>> Running chunck number %i, starting in event %lli... will loop over %lli events (last event = %lli)\n\n\033[0m", iChunck, FirstEvent, nEvents, FirstEvent + nEvents);
-    sampleName += Form("_%i", iChunck);
+		cout << Form("\033[1;36m >>> Running chunk number %i, starting in event %lli... will loop over %lli events (last event = %lli)\n\n\033[0m", iChunk, FirstEvent, nEvents, FirstEvent + nEvents);
+    sampleName += Form("_%i", iChunk);
   }
 
 
-  // PAF mode
+  // PAF mode selection (based on number of slots)
   //----------------------------------------------------------------------------
   PAFIExecutionEnvironment* pafmode = 0;
-  if      (nSlots <=1 ) pafmode = new PAFSequentialEnvironment();
-  else if (nSlots <=64) pafmode = new PAFPROOFLiteEnvironment(nSlots);
-  else                  pafmode = new PAFPoDEnvironment(nSlots);
+  if      (nSlots <=1 ) {
+    PAF_INFO("RunAnalyser", "Sequential mode selected");
+    pafmode = new PAFSequentialEnvironment();
+  }
+  else if (nSlots <=64 ) {
+    PAF_INFO("RunAnalyser", "PROOF Lite mode selected");
+    pafmode = new PAFPROOFLiteEnvironment(nSlots);
+  }
+  else {
+    PAF_INFO("RunAnalyser", "PoD mode selected");
+    pafmode = new PAFPoDEnvironment(nSlots);
+  }
   PAFProject* myProject = new PAFProject(pafmode); // Create PAF Project whith that environment
 
+  myProject->AddLibrary("/nfs/fanae/root6/lib/libTMVA.so");
+  
 	myProject->AddDataFiles(Files); 
 
 	if     (nEvents > 0 && FirstEvent == 0) myProject->SetNEvents(nEvents);
@@ -220,12 +257,14 @@ void RunAnalyserPAF(TString sampleName, TString Selection, Int_t nSlots, Long64_
 	// Parameters for the analysis
 	//----------------------------------------------------------------------------
 	// COMMON PARAMETERS
-	myProject->SetInputParam("sampleName",    sampleName       );
-	myProject->SetInputParam("IsData",        G_IsData         );
-	myProject->SetInputParam("weight",        G_Event_Weight   );
-	myProject->SetInputParam("IsMCatNLO",     G_IsMCatNLO      );  
-	myProject->SetInputParam("iSelection",    sel              );
-	myProject->SetInputParam("WorkingDir",    WorkingDir       );
+	myProject->SetInputParam("sampleName",        sampleName       );
+	myProject->SetInputParam("IsData",            G_IsData         );
+	myProject->SetInputParam("weight",            G_Event_Weight   );
+	myProject->SetInputParam("IsMCatNLO",         G_IsMCatNLO      );  
+	myProject->SetInputParam("iSelection",        sel              );
+	myProject->SetInputParam("WorkingDir",        WorkingDir       );
+	myProject->SetInputParam("pathToHeppyTrees",  pathToFiles);
+	//myProject->SetInputParam("CountLHE ",  CountLHE);
 
 	// EXTRA PARAMETERS
 	myProject->SetInputParam("IsFastSim"    , G_IsFastSim);
@@ -237,23 +276,31 @@ void RunAnalyserPAF(TString sampleName, TString Selection, Int_t nSlots, Long64_
 	// Name of analysis class
 	//----------------------------------------------------------------------------
 	myProject->AddSelectorPackage("LeptonSelector");
+	if(sel == ittHSelec || sel == i4tSelec) myProject->AddSelectorPackage("TauSelector");
 	myProject->AddSelectorPackage("JetSelector");
 	myProject->AddSelectorPackage("EventBuilder");
 	if      (sel == iStopSelec)  myProject->AddSelectorPackage("StopAnalysis");
+	else if (sel == ittDMSelec)  myProject->AddSelectorPackage("ttDM");
 	else if (sel == iTopSelec )  myProject->AddSelectorPackage("TopAnalysis");
+	else if (sel == ittHSelec )  myProject->AddSelectorPackage("ttHAnalysis");
+	else if (sel == i4tSelec)    myProject->AddSelectorPackage("t4Analysis");
+	else if (sel == iTWSelec  ){
+	  myProject->AddSelectorPackage("TopAnalysis");
+	  // myProject->AddSelectorPackage("TWAnalysis");
+	}
 	else if (sel == iWWSelec  )  myProject->AddSelectorPackage("WWAnalysis");
-	else                         myProject->AddSelectorPackage("CreateMiniTree");
+	else                         cout << " >>>>>>>> No selector found for this analysis!!!! " << endl;
 
 	// Additional packages
 	//----------------------------------------------------------------------------
 	myProject->AddPackage("Lepton");
 	myProject->AddPackage("Jet");
+  if(sel == i4tSelec) myProject->AddPackage("SFfor4top");
 	myProject->AddPackage("mt2");
 	myProject->AddPackage("Functions");
 	myProject->AddPackage("LeptonSF");
 	myProject->AddPackage("BTagSFUtil");
 	myProject->AddPackage("PUWeight");
-
 	// Let's rock!
 	//----------------------------------------------------------------------------
 	myProject->Run();
@@ -289,6 +336,7 @@ void GetCount(std::vector<TString> Files, Bool_t IsData){
 		}
 		f->Close();    
 	}
+  //cout << "Count   = " << Count   << endl; cout << "nEvents = " << nTrueEntries << endl;
 }
 
 Float_t GetSMSnorm(Int_t mStop, Int_t mLsp){
@@ -314,6 +362,7 @@ Float_t GetSMSnorm(Int_t mStop, Int_t mLsp){
 	}
   return count;
 }
+
 
 Double_t GetStopXSec(Int_t StopMass){
   if      (StopMass == 125) return 574.981;
@@ -358,4 +407,78 @@ Double_t GetStopXSec(Int_t StopMass){
 		Float_t x  = float(StopMass%25)/25;
 		return v0 + (vf-v0)*x;
 	}
+}
+
+vector<TString> GetAllFiles(TString path, TString  filename) {
+  if(verbose) cout << "[GetAllFiles] Obtaining files of form " << filename << " in folder " << path << endl;  
+  vector<TString> theFiles;
+
+  TString command("ls ");
+  if(filename != "")
+    command += 
+      path + "/" + filename + " " +
+      path + "/" + filename + ".root " +
+      path + "/" + filename + "_[0-9].root " +
+      path + "/" + filename + "_[0-9][0-9].root " +
+      path + "/Tree_" + filename + ".root " +
+      path + "/Tree_" + filename + "_[0-9].root " +
+      path + "/Tree_" + filename + "_[0-9][0-9].root";
+  else command += path;
+
+  command += " 2> /dev/null";
+  if(verbose) cout << "[GetAllFiles] Executing command: " << command << endl;
+
+  //We cannot use GetFromPipe because it is too verbose, so we implement
+  //the full code
+  //    TString result=gSystem->GetFromPipe(command);
+  TString result;
+  FILE *pipe = gSystem->OpenPipe(command, "r");
+  if (!pipe) cerr << "ERROR: in GetAllFiles. Cannot run command \"" << command << "\"" << endl;
+  else {
+    TString line;
+    while (line.Gets(pipe)) {
+      if (result != "")	result += "\n";
+      result += line;
+    }
+    gSystem->ClosePipe(pipe);
+  }
+  
+  if (result != "" ) {
+    TObjArray* filesfound = result.Tokenize(TString('\n'));
+    if (!filesfound) cerr << "ERROR: in GetAllFiles. Could not parse output while finding files" << endl;
+    else {
+      for (int i = 0; i < filesfound->GetEntries(); i++) theFiles.push_back(filesfound->At(i)->GetName());
+      filesfound->Clear();
+      delete filesfound;
+    }
+  }
+
+  if (theFiles.size() == 0) cerr << "ERROR: in GetAllFiles. Could not find data!" << endl;
+  return theFiles;
+}
+
+void CheckTree(TString filename, TString treeName, Int_t verbose){
+  if(verbose) cout << "Checking rootfile " << filename << "... "; 
+  TFile* f = TFile::Open(filename);
+  if(verbose) cout << "Looking for TTree " << treeName << "... ";
+  TTree* t; f->GetObject(treeName, t);
+  if(t){
+    if(verbose) cout << "Found! ";  
+    Int_t nEntries = t->GetEntries();
+    if(verbose) cout << "nEntries = " << nEntries << endl;
+  }
+  else{
+    if(verbose) cout << "TTree not found in " << filename << endl;
+  }
+}
+
+void CheckTreesInDir(TString path, TString treeName, Int_t verbose){
+  if(path.EndsWith(".root")){
+    CheckTree(path, treeName);
+    return;
+  }
+  vector<TString> AllFiles = GetAllFiles(path, "Tree_*.root");
+  for(Int_t i = 0; i < (Int_t) AllFiles.size(); i++){
+    CheckTree(AllFiles.at(i), treeName, verbose);
+  }
 }

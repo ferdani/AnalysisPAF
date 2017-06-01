@@ -21,21 +21,21 @@ class LeptonSF {
   ~LeptonSF() {}
   void loadHisto(Int_t iHisto, Int_t wp = -1);
   Float_t GetTrackerMuonSF(Float_t eta);
-	Float_t GetLeptonSF(Float_t pt, Float_t ieta, Int_t type = 0);
-	Float_t GetLeptonSFerror(Float_t pt, Float_t ieta, Int_t type = 0);
-	TGraphAsymmErrors* LoadTrackerMuonSF(const char* file, const char* histo);
+  Float_t GetLeptonSF(Float_t pt, Float_t ieta, Int_t type = 0);
+  Float_t GetLeptonSFerror(Float_t pt, Float_t ieta, Int_t type = 0);
+  TGraphAsymmErrors* LoadTrackerMuonSF(const char* file, const char* histo);
   TString path_to_SF_histos;
   
   // Trigger SFs
   Float_t GetTrigDoubleMuSF(Float_t eta1, Float_t eta2) const;
   Float_t GetTrigDoubleElSF(Float_t eta1, Float_t eta2) const;
-  Float_t GetTrigElMuGSF   (Float_t eta1, Float_t eta2) const;
+  Float_t GetTrigElMuSF    (Float_t eta1, Float_t eta2) const;
   // Trigger SF errors
   Float_t GetTrigDoubleMuSF_err(Float_t eta1, Float_t eta2) const;
   Float_t GetTrigDoubleElSF_err(Float_t eta1, Float_t eta2) const;
   Float_t GetTrigElMuSF_err    (Float_t eta1, Float_t eta2) const;
   
-	std::vector<Int_t> loadedHistos;
+  std::vector<Int_t> loadedHistos;
 
  protected:
   TH2D* GetHistogramFromFileD(const char* file, const char* histo, const char* hname);
@@ -52,6 +52,9 @@ class LeptonSF {
   TH2D*  fMuonIsoSFSUSY;     
   TH2D*  fMuonIP2DSF;     
   TH2D*  fMuonSIP3DSF;     
+  TH2D*  fMuonIsoFastSim;
+  TH2D*  fMuonIdFastSim;
+  TH2D*  fElecFastSim;
  
   // Elec SFs
   TH2D*  fElecTrackerSF;
