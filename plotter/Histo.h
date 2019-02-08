@@ -11,7 +11,7 @@
 #include <iostream>
 #include "TCut.h"
 
-enum types{itBkg, itSignal, itData, itCompare, itSys, nTypes};
+enum types{itBkg, itSignal, itData, itCompare, itSys, itOther, nTypes};
 enum isysts{iJESUp, iJESDown, iJER, iBtagUp, iBtagDown, iMisTagUp, iMisTagDown, iLepEffUp, iLepEffDown, iTrigUp, iTrigDown, iPUUp, iPUDown, iFSUp, iFSDown, iGenMETUp, iGenMETDown, iISRJetsUp, iISRJetsDown, iQ2Up, iQ2Down, iPDFUp, iPDFDown, iHadUp, iHadDown, iNLOUp, iNLODown, nSysts};
 TString SystName[nSysts] = {"JESUp", "JESDown", "JER", "BtagUp", "BtagDown", "MisTagUp", "MisTagDown", "LepEffUp", "LepEffDown", "TrigUp", "TrigDown", "PUUp", "PUDown", "FSUp", "FSDown", "GenMETUp", "GenMETDown", "ISRJetsUp", "ISRJetsDown", "Q2Up", "Q2Down", "PDFUp", "PDFDown", "HadUp", "HadDown", "NLOUp", "NLODown"};
 
@@ -22,7 +22,11 @@ const TString DefaultTreeName = "MiniTree";
 
 class Histo : public TH1F{
  public:
+  Bool_t doStackOverflow = true;
+
+  Histo();
   Histo(const char *name, const char *title, Int_t nbins, Double_t xlow, Double_t xup);
+  Histo(const char *name, const char *title, Int_t nbins, Float_t* bins);
   //Histo(const char *name, const char *title, Int_t nbins, const Float_t* xbins);
  Histo(const TH1F &h, Int_t tipo = 0, Int_t c = 1): tag(""), process(""){
     ((Histo&)h).Copy(*this);
@@ -36,10 +40,16 @@ class Histo : public TH1F{
     //if(vsysd) delete vsysd;
     //if(vsysu) delete vsysu;
   };
+  void Init(){ 
+    type = 0; color = 0; SysTag = "0";
+    tag = "0"; process="0"; cuts="0"; xlabel="0";
+    DrawStyle = "";
+  }
   
   void SetType(Int_t tipo = 0);
   void SetColor(Int_t c);
   void SetStyle();
+  void ReCalcValues();
   void SetStatUnc();
   Histo* CloneHisto(const char* newname=0) const;
 
@@ -51,7 +61,7 @@ class Histo : public TH1F{
   TString GetProcess(){return process;}
   Float_t GetSysNorm(){return sysNorm;}
   Int_t GetColor(){ return color;}
-  void StackOverflow(Bool_t doStackOverflow = 1);
+  void StackOverflow();
   void SetTag(TString p, TString t="", TString x = "", TString c = "");
   void SetProcess(TString p);
   void SetTitles(TString x, TString c = "");
@@ -66,13 +76,15 @@ class Histo : public TH1F{
   void SetBinsErrorFromSyst();
   void SetDrawStyle(TString g){ DrawStyle = g;}
   TString GetDrawStyle(){ return DrawStyle;}
+  void GetEnvelope(vector<Histo*> v, Int_t dir = 1) ;
   
   Float_t *vsysu = NULL; 
   Float_t *vsysd = NULL;
-  
+
+
  protected:
   Int_t type; 
-  TString DrawStyle = "";
+  TString DrawStyle;
   Int_t color;
   TString tag = "0"; TString process="0"; TString cuts="0"; TString xlabel="0";
   Float_t sysNorm;
@@ -82,6 +94,12 @@ class Histo : public TH1F{
   Bool_t IsStackOverflow = true;
   TString SysTag = "0";
 
+};
+
+Histo::Histo(){
+  SetType(0);
+  SetStyle();
+  SetColor(1);
 };
 
 Histo::Histo(const char *name, const char *title, Int_t nbins, Double_t xlow, Double_t xup)	: TH1F(name, title, nbins, xlow, xup){

@@ -13,7 +13,7 @@ class EventBuilder : public PAFChainItemSelector{
     std::vector<Float_t> LHEWeights;
 
     EventBuilder();
-    virtual ~EventBuilder() {delete fPUWeight, fPUWeightUp, fPUWeightDown, TriggSF;}
+    virtual ~EventBuilder();
     virtual void InsideLoop();
     virtual void Initialise();
     virtual void Summary();
@@ -21,6 +21,7 @@ class EventBuilder : public PAFChainItemSelector{
     //Bool_t PassHLT_Elec; Bool_t PassHLT_Muon; Bool_t PassHLT_ElMu;
     Bool_t METfilters;
     Bool_t passTrigger;
+    Bool_t passTrigger2;
     Bool_t isSS;
     Bool_t gIsFastSim;
 
@@ -86,6 +87,7 @@ class EventBuilder : public PAFChainItemSelector{
     Int_t nProcessedEvents;
 
     TString gOptions;
+    Bool_t gIs2017;
     Bool_t gIsData2017;
   
 

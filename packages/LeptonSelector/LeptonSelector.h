@@ -22,19 +22,27 @@ class LeptonSelector : public PAFChainItemSelector{
     std::vector<Lepton> looseLeptons;
     std::vector<Lepton> genLeptons;
     std::vector<Lepton> vetoLeptons;
+    std::vector<TLorentzVector> vGenBquarks;
 
   protected:
 
     LeptonSF *LepSF;
+    ElecScaleClass *ElecScale;
     Bool_t gIsData;
     Bool_t gIsFastSim;
     Int_t  gSelection;
+    Bool_t gIs2017;
+    TString gOptions;
     Int_t  gChannel;
     TString localPath;
 
     // Trigger     
     Float_t TriggerSF;
     Float_t TriggerSFerr;
+
+    // FullSim/FastSim SF
+    Float_t FSSF;
+    Float_t FSSFerr;
 
     // LepGood
     Lepton tL;
@@ -43,10 +51,12 @@ class LeptonSelector : public PAFChainItemSelector{
     TLorentzVector tP; 
     Float_t pt;
     Float_t eta;
-    Int_t 	charge; 
-    Int_t 	type;
-    Int_t 	tightVar;
-    Int_t 	mediumMuonId;
+    Float_t energy;
+    Int_t   charge; 
+    Int_t   type;
+    Int_t   pdgid;
+    Int_t   tightVar;
+    Int_t   mediumMuonId;
     Float_t etaSC;
     Float_t RelIso03;
     Float_t RelIso04;
@@ -63,14 +73,20 @@ class LeptonSelector : public PAFChainItemSelector{
     Float_t dxy;
     Float_t dz; 
     Float_t sip;
-    Float_t SF;
     Float_t MVATTH;
-    Int_t	TightCharge;
+    Float_t MVASUSY;
+    Int_t  TightCharge;
     Float_t MVAID;
     Float_t jetBTagCSV;
     Float_t SegComp;
     Int_t isGlobalMuon;
     Int_t isTrackerMuon;
+    Int_t lepMVASUSYId;
+    Float_t R9;
+    Int_t mcMatchID;
+    Int_t mcPrompt;
+    Int_t mcPromptGamma;
+    Int_t mcMatchPDGID;
     
     // genLeptons
     Int_t ngenLep;
@@ -87,6 +103,7 @@ class LeptonSelector : public PAFChainItemSelector{
     void GetDiscLeptonVariables(Int_t i);
     void GetGenLeptonVariables(Int_t i);
     void GetGenLepFromTauVariables(Int_t i);
+    void GetGenBquarks();
     Bool_t getSIPcut(Float_t cut); 
     Bool_t getGoodVertex(Int_t wp); 
     Bool_t getRelIso03POG(Int_t wp); 
@@ -96,10 +113,12 @@ class LeptonSelector : public PAFChainItemSelector{
     Bool_t getElecMVA(Int_t wp);
     Bool_t getElecMVAId(Int_t wp, Lepton lep); 
     Bool_t getElecCutBasedId(Int_t wp); 
+    Bool_t getElecCutBasedId2017(Int_t wp); 
     Bool_t getMultiIso(Int_t wp);
     Bool_t isGoodLepton(Lepton lep);
     Bool_t isLooseLepton(Lepton lep);
     Bool_t isVetoLepton(Lepton lep);
+    Int_t  getSUSYMVAId(Lepton lep, Int_t ty);
 
   ClassDef(LeptonSelector, 0);
 };

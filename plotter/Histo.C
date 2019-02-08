@@ -33,7 +33,7 @@ void Histo::SetType(Int_t tipo){
   }
 }
 
-void Histo::StackOverflow(Bool_t doStackOverflow){
+void Histo::StackOverflow(){
 	if(!doStackOverflow) return;
 	int lastBin = GetNbinsX();
 	float lastBinContent = GetBinContent(lastBin);
@@ -48,6 +48,11 @@ void Histo::SetStyle(){
 	yield = Integral();
 	max = GetMaximum();
 	GetXaxis()->SetTitle(xlabel);
+}
+
+void Histo::ReCalcValues(){
+	yield = Integral();
+	max = GetMaximum();
 }
 
 void Histo::SetStatUnc(){
@@ -65,7 +70,6 @@ void Histo::SetStatUnc(){
 }
 
 void Histo::SetTag(TString t, TString p, TString x, TString c){
-
   if(t != "") tag = t;
   if(p != "") process = p; 
   if(x != "") xlabel = x;
@@ -91,14 +95,16 @@ void Histo::AddToLegend(TLegend* leg, Bool_t doyi){
   TH1F* h2 = (TH1F*) Clone("toLeg");
   TString op = "f";
   if(DrawStyle != "") op = DrawStyle;
+  if(DrawStyle == "hist") op = "l";
   else{
     if      (type == itSignal){
-      if(GetFillColor() == 0) op = "l";
+      if(GetFillColor() == 0) op = "lp";
       else op = "f";
     }
     else if (type == itData)   op = "pe";
     else if (type == itCompare)op = "pe";
   }
+  
   if(doyi) leg->AddEntry(h2, Form(process + ": %1.0f", yield), op);
   else leg->AddEntry(h2, tag, op);
 }
@@ -129,6 +135,7 @@ void Histo::AddToSystematics(Histo* hsys, TString dir){
   if(ourbins != nbins)  std::cout << " [Histo] WARNING: cannot add to systematics" << std::endl; 
   for(Int_t k = 0; k < nbins; k++){
     diff = GetBinContent(k+1) - hsys->GetBinContent(k+1);
+    // if (k == 2) cout << hsys->GetName() << " " << diff/GetBinContent(k+1) << endl;
     if(diff >  0) vsysd[k] += diff*diff;
     else          vsysu[k] += diff*diff;
   }
@@ -139,16 +146,34 @@ void Histo::SetBinsErrorFromSyst(){
   Float_t max = 0;
   for(Int_t k = 0; k < nbins; k++){
     //max = vsysd[k] > vsysu[k] ? vsysd[k] : vsysu[k];
-    SetBinError(k+1, TMath::Sqrt((vsysu[k]+vsysd[k])/2));
+    SetBinError(k+1, (TMath::Sqrt(vsysu[k]) + TMath::Sqrt(vsysd[k])) /2);
   }
 }
 
 
 
-Histo* Histo::CloneHisto(const char* newname) const
-{
+Histo* Histo::CloneHisto(const char* newname) const{
   TH1F* h = (TH1F*) Clone(newname);
-  return new Histo(*h);
-    
+  Histo* g = new Histo(*h);
+  g->SetTag(tag, process, xlabel, cuts);
+  g->SetType(type); g->SetColor(color);
+  g->SetStyle();
+  return g;
+}
 
+
+void Histo::GetEnvelope(vector<Histo*> v, Int_t dir) {
+  Int_t nHistos = v.size();
+  Int_t nbins = GetNbinsX();
+  Float_t extremeval; Float_t val = 0;
+
+  for(Int_t iB = 0; iB <= nbins; iB++){
+    extremeval = GetBinContent(iB);
+    for(Int_t iH = 0; iH < nHistos; iH++){
+      val = v.at(iH)->GetBinContent(iB);
+      if(dir >= 0) if(val > extremeval) extremeval = val;
+      if(dir <  0) if(val < extremeval) extremeval = val;
+    }
+    SetBinContent(iB, extremeval);
+  }
 }
