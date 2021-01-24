@@ -3,6 +3,10 @@
 
 #include "TLorentzVector.h"
 #include "TString.h"
+#include "ElecScaleClass.h"
+
+class Lepton;
+enum genLepMatch{kLGMtoGenLep, kLGMgood, kLGMfake, kLGMflip, kLGMconv, kLGMtoGenB, kLGMother};
 
 class Lepton : public TObject{
   public:
@@ -11,6 +15,7 @@ class Lepton : public TObject{
       charge = 0;
       type = -1;
       isElec = 0; isMuon = 0; isTau = 0;
+      Mid = 0;
     };
     //Lepton(const Lepton &l): p(l.p), charge(l.charge), type(l.type), index(l.index){ };
  Lepton(TLorentzVector vec, 
@@ -39,12 +44,13 @@ class Lepton : public TObject{
     ~Lepton(){};
     TLorentzVector p;
     Int_t charge;
+    Int_t type;
     Int_t decayMode;
     Int_t idDecayMode;
     Int_t idMVA;
     Int_t idAntiE;
     Int_t idAntiMu;
-    Int_t type;
+    Int_t Mid; // mother Id, for gen leptons
     Bool_t isElec;
     Bool_t isMuon;
     Bool_t isTau;
@@ -52,17 +58,31 @@ class Lepton : public TObject{
     void SetSF(Float_t val);
     void SetSFerr(Float_t val);
     void SetIso(Float_t val){ Iso = val;}
-    Float_t GetIso(){ return Iso;} 
+    void SetR9(Float_t val){ R9 = val;}
+    void SetEnergyUnc(Float_t val){ EnergyUnc = val;}
+    void SetGenMatch(Int_t m){ genMatch = m;}
 
     Float_t Pt(){return p.Pt();}
     Float_t Eta(){return p.Eta();}
     Float_t Phi(){return p.Phi();}
     Float_t E(){return p.E();}
+    Float_t GetIso(){ return Iso;} 
+    Float_t GetR9(){return R9;}
+    Float_t GetEnergyUnc(){return EnergyUnc;}
+    Int_t   GetGenMatch(){return genMatch;}
+    
 
+    Lepton * lepMatch = 0;
+    Int_t isPrompt;
+    Int_t isConvVeto;
+    Int_t isTight = -1;
   protected:
     Float_t SF;
     Float_t SFerr;
     Float_t Iso;
+    Float_t R9;
+    Float_t EnergyUnc;
+    Int_t   genMatch;
 
     //ClassDef(Lepton, 0);
 };

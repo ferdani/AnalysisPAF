@@ -3,10 +3,13 @@
 *.d
 *.pcm
 .paf/
+*.pyc
+combine_logger.out
 
 # Exclude files by emacs
 *~
 .~*
+
 # Exclude downloaded Datasets
 Datasets/
 
@@ -14,3 +17,16 @@ Datasets/
 .DS_Store
 *_temp/
 inputdata.root
+plotter/TW/Differential/temp/*
+plotter/TW/Differential/results/*
+plotter/TW/slurm-*
+plotter/TWTTbar/temp/*
+plotter/TWTTbar/results/*
+plotter/TWTTbar/logs/*
+out_*.txt
+
+#Higgs combine output :)
+higgsCombine*.root
+higgsCombinefit_*.root
+roostats-*
+LCurve*

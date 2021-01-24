@@ -52,7 +52,7 @@ Float_t getMinDPhiMetJets(vector<Jet> vjets, Float_t met, Float_t met_phi){
   Float_t minDphi  = 999;
   TLorentzVector pmet;
   pmet.SetPtEtaPhiM(met, 0, met_phi, 0);
-  for(Int_t i = 0; i < vjets.size(); i++){
+  for(Int_t i = 0; i < (int) vjets.size(); i++){
     deltaphi = pmet.DeltaPhi(vjets[i].p);
     if(minDphi > deltaphi) minDphi = deltaphi;
   }
@@ -82,6 +82,35 @@ Float_t getMT2ll(Lepton l1, Lepton l2, Float_t met, Float_t met_phi){
   return MT2;
 }
 
+Float_t getMT2llLepScale(Lepton l1, Lepton l2, Float_t met, Float_t met_phi, int id, int dir){
+  TLorentzVector pmet;
+  pmet.SetPtEtaPhiM(met, 0, met_phi, 0);
+  TLorentzVector p1 = l1.p;
+  TLorentzVector p2 = l2.p;
+  int id1 = l1.isMuon? 13 : 11;
+  int id2 = l2.isMuon? 13 : 11;
+  float scale;
+  float pt; float eta; float phi; float M;
+
+  if(id1 == id){
+    pt    = l1.Pt(); eta = l1.Eta(); phi = l1.Phi(); M = l1.p.M();
+    scale = l1.GetEnergyUnc();
+    if(dir > 0) pt = pt*(scale+1);
+    if(dir < 0) pt = pt*(scale-1);
+    p1.SetPtEtaPhiM(pt, eta, phi, M);
+  } 
+  if(id2 == id){
+    pt    = l2.Pt(); eta = l2.Eta(); phi = l2.Phi(); M = l2.p.M();
+    scale = l2.GetEnergyUnc();
+    if(dir > 0) pt = pt*(scale+1);
+    if(dir < 0) pt = pt*(scale-1);
+    p2.SetPtEtaPhiM(pt, eta, phi, M);
+  } 
+
+  Float_t MT2 = getMT2(p1, p2, pmet, 0);
+  return MT2;
+}
+
 Float_t getMeff(Lepton l1, Lepton l2, vector<Jet> vjets, Float_t met){
   return l1.p.Pt() + l2.p.Pt() + met;
 } 
@@ -99,6 +128,16 @@ Bool_t Cleaning(Jet j, vector<Lepton> vLep, Float_t minDR){
   }
   return true;
 }
+
+Bool_t Cleaning(TLorentzVector p, vector<TLorentzVector> particles, Float_t minDR){
+  Int_t nPart = particles.size(); Int_t i = 0;
+  for(i = 0; i < nPart; i++){
+    if(p.DeltaR(particles.at(i)) < minDR) return false;
+  }
+  return true;
+}
+
+
 
 // ==================================================================
 // ========================== Systematics ===========================
@@ -121,6 +160,32 @@ Float_t JEStoMET(vector<Jet> vjets, Float_t met, Float_t met_phi, Int_t dir){
     varJets += temp;
   }
   return (vmet+nomJets-varJets).Pt();
+}
+
+Float_t LepScaleToMET(vector<Lepton> vlep, Float_t met, Float_t met_phi, Int_t id, Int_t dir){
+  if(dir == 0 || (id != 11 && id != 13)){
+    std::cout << "[ERROR] Wrong value in JEStoMET" << std::endl;
+    return 0;
+  }
+  TLorentzVector vmet    = TLorentzVector();
+  vmet.SetPtEtaPhiM(met, 0, met_phi, 0);
+  TLorentzVector nomLeps = TLorentzVector(0,0,0,0);
+  TLorentzVector varLeps = TLorentzVector(0,0,0,0);
+  TLorentzVector temp = TLorentzVector(0,0,0,0); 
+  Int_t mid = 0; float scale; float pt;
+  for(Int_t i = 0; i < (Int_t) vlep.size(); i++){
+    mid = vlep.at(i).isMuon? 13 : 11;
+    if(mid != id) continue;
+    scale = vlep.at(i).GetEnergyUnc();
+
+    nomLeps += vlep.at(i).p;
+    pt = vlep.at(i).Pt();
+    if(     dir < 0) pt = pt*(1-scale);
+    else if(dir > 0) pt = pt*(1+scale);
+    temp.SetPtEtaPhiM(pt, vlep.at(i).p.Eta(), vlep.at(i).p.Phi(), vlep.at(i).p.M());
+    varLeps += temp;
+  }
+  return (vmet+nomLeps-varLeps).Pt();
 }
 
 Float_t JERtoMET(vector<Jet> vjets, Float_t met, Float_t met_phi){
@@ -355,6 +420,29 @@ Jet GetMatchedJet(Jet origJet, std::vector<Jet> jetCollection, Float_t etaRange,
   return Jet(TLorentzVector(0,0,0,0), 0, 0, 0);
 }
 
+Bool_t IsMatchedDeltaR(TLorentzVector t, std::vector<TLorentzVector> vb, Float_t DeltaR){
+  Int_t nb = vb.size(); Int_t i;
+  for(i = 0; i < nb; i++) if( TMath::Abs(t.DeltaR(vb.at(i))) <= DeltaR) return true;
+  return false;
+}
+
+Bool_t IsMatchedDeltaR(TLorentzVector t, std::vector<Lepton> vb, Float_t DeltaR){
+  Int_t nb = vb.size(); Int_t i;
+  vector<TLorentzVector> vt;
+  for(i = 0; i < nb; i++) vt.push_back(vb.at(i).p);
+  return IsMatchedDeltaR(t, vt, DeltaR);
+}
+
+Bool_t IsMatchedDeltaR(TLorentzVector t, std::vector<Jet> vb, Float_t DeltaR){
+  Int_t nb = vb.size(); Int_t i;
+  vector<TLorentzVector> vt;
+  for(i = 0; i < nb; i++) vt.push_back(vb.at(i).p);
+  return IsMatchedDeltaR(t, vt, DeltaR);
+}
+
+
+
+
 // ==================================================================
 // ========================== Other ================================
 // ==================================================================
@@ -528,6 +616,17 @@ Int_t getCS(vector<Lepton> lepton) { // Get the sum of charges of a vector of Le
   return cs;
 }
 
+Int_t GetDileptonicChannel(vector<Lepton> leptons){
+  Int_t nLeptons = leptons.size();
+  if(nLeptons < 2) return 0; // no channel
+  else{
+    if(     leptons.at(0).isMuon && leptons.at(1).isMuon) return iMuon;
+    else if(leptons.at(0).isElec && leptons.at(1).isElec) return iElec;
+    else return iElMu;
+  }
+  return 0;
+}
+
 void co(TString out, TString co = "1;30"){
   std::cout << "\033[" << co << "m" << out << "\033[0m" << endl;
 }
@@ -555,3 +654,282 @@ void DumpEvent(Int_t evt, TString s, Bool_t verbose){
     if(evt == ee) cout << s << endl;
   }
 }
+
+std::vector<Lepton> AssignWZLeptons(std::vector<Lepton> leptonList){//Assign W and Z Leptons as in the WZ analysis. Z leptons are assigned to the best invariant mass pair, W lepton is the next higher p_T lepton.
+  Float_t dZmass = 100000.; 
+  Int_t nLeptons = leptonList.size();
+  Int_t indexZ1;
+  Int_t indexZ2;
+  std::vector<Lepton> WZleps;
+  for(Int_t i = 0; i < nLeptons; i++){
+    for(Int_t j = i+1; j < nLeptons; j++){
+      if ( ( (leptonList.at(j).isMuon && leptonList.at(i).isMuon) || (leptonList.at(j).isElec && leptonList.at(i).isElec)    ) && leptonList.at(i).charge*leptonList.at(j).charge == -1){
+        Float_t hypZmass = (leptonList.at(j).p + leptonList.at(i).p).M();
+        if (TMath::Abs(hypZmass-91.1876) < dZmass){
+          dZmass = TMath::Abs(hypZmass-91.1876);
+          if (leptonList.at(j).Pt() > leptonList.at(i).Pt()) {
+            indexZ1 = j;
+            indexZ2 = i;
+          }
+          else{
+            indexZ2 = j;
+            indexZ1 = i;
+          }
+        }
+      }
+    }
+  }
+  WZleps.push_back(leptonList.at(indexZ1));
+  WZleps.push_back(leptonList.at(indexZ2));
+  for(Int_t i = 0; i < nLeptons; i++){
+    if (i != indexZ1 && i != indexZ2){
+      WZleps.push_back(leptonList.at(i));
+    }
+  }  
+  return WZleps;
+}
+
+std::vector<Lepton> getMatchGenSelLeptons(std::vector<Lepton> selectedLeptons, std::vector<Lepton> generatedLeptons, Float_t dRMax, Bool_t doIdMatch){ //Match reco and gen leptons according to closest dR value. Used to discriminate by truth MC info
+  Int_t nSel       = selectedLeptons.size();
+  Int_t nGen       = generatedLeptons.size();
+  std::pair<Float_t,Int_t> dRValues[nSel*nGen];
+  for (Int_t i = 0; i < nSel ; i++){
+    for (Int_t j = 0; j < nGen ; j++){
+      dRValues[i*nGen + j] = {selectedLeptons.at(i).p.DeltaR(generatedLeptons.at(j).p),i*nGen+j};
+      if (selectedLeptons.at(i).type != generatedLeptons.at(j).type && doIdMatch){
+        dRValues[i*nGen +j].first = 2*dRMax;
+      }
+    }
+  }
+  std::sort(dRValues, dRValues + nGen*nSel);
+  for (Int_t k = 0; k < nGen*nSel; k++){
+    if (dRValues[k].first * dRValues[k].first < dRMax * dRMax &&  selectedLeptons.at(dRValues[k].second / nGen).lepMatch == 0 && generatedLeptons.at(dRValues[k].second % nGen).lepMatch == 0){
+      selectedLeptons.at(dRValues[k].second / nGen).lepMatch  =  &generatedLeptons.at(dRValues[k].second % nGen);
+      generatedLeptons.at(dRValues[k].second % nGen).lepMatch =  &selectedLeptons.at(dRValues[k].second / nGen);
+    }
+  }
+  return selectedLeptons;
+}
+
+Float_t GetTopPtWeight(Float_t Pt1, Float_t Pt2){
+  Float_t a = 0.0615; Float_t b = 0.0005;
+  Float_t SF1; Float_t SF2;
+  SF1 = TMath::Exp(a - Pt1*b);
+  SF2 = TMath::Exp(a - Pt2*b);
+  return TMath::Sqrt(SF1*SF2);
+}
+/**
+Float_t GetFSR_JECSF_Up(Float_t pt){
+  if(pt < 30.000000) pt = 25.000000;
+  if(pt > 600.000000) pt = 500.000000;
+  if     (pt < 40.000000) return 0.987039;
+  else if(pt < 50.000000) return 0.989179;
+  else if(pt < 60.000000) return 0.990817;
+  else if(pt < 70.000000) return 0.992049;
+  else if(pt < 80.000000) return 0.992526;
+  else if(pt < 90.000000) return 0.992969;
+  else if(pt < 100.000000) return 0.993611;
+  else if(pt < 120.000000) return 0.993987;
+  else if(pt < 140.000000) return 0.994130;
+  else if(pt < 160.000000) return 0.994253;
+  else if(pt < 200.000000) return 0.994665;
+  else if(pt < 300.000000) return 0.994847;
+  else if(pt < 400.000000) return 0.995071;
+  else if(pt < 600.000000) return 0.994727;
+  else return 0.;
+}
+
+Float_t GetFSR_JECSF_Down(Float_t pt){
+  if(pt < 30.000000) pt = 25.000000;
+  if(pt > 600.000000) pt = 500.000000;
+  if     (pt < 40.000000) return 1.007749;
+  else if(pt < 50.000000) return 1.006871;
+  else if(pt < 60.000000) return 1.005970;
+  else if(pt < 70.000000) return 1.005230;
+  else if(pt < 80.000000) return 1.004952;
+  else if(pt < 90.000000) return 1.004189;
+  else if(pt < 100.000000) return 1.004333;
+  else if(pt < 120.000000) return 1.003824;
+  else if(pt < 140.000000) return 1.003821;
+  else if(pt < 160.000000) return 1.003357;
+  else if(pt < 200.000000) return 1.003496;
+  else if(pt < 300.000000) return 1.003613;
+  else if(pt < 400.000000) return 1.003801;
+  else if(pt < 600.000000) return 1.003838;
+  else return 0.;
+}
+*/
+Float_t GetMetResolutionSF(Float_t met){
+  Float_t fNorm = 0.92631;
+  if(met < 0.000000) met = 3.750000;
+  if(met > 150.000000) met = 149;
+  if     (met < 7.500000) return 0.940594;
+  else if(met < 15.000000) return 0.957707;
+  else if(met < 22.500000) return 0.971954;
+  else if(met < 30.000000) return 0.989865;
+  else if(met < 37.500000) return 0.997489;
+  else if(met < 45.000000) return 0.993762;
+  else if(met < 52.500000) return 0.984065;
+  else if(met < 60.000000) return 0.963710;
+  else if(met < 67.500000) return 0.946336;
+  else if(met < 75.000000) return 0.919873;
+  else if(met < 82.500000) return 0.893570;
+  else if(met < 90.000000) return 0.873634;
+  else if(met < 97.500000) return 0.860273;
+  else if(met < 105.000000) return 0.858863;
+  else if(met < 112.500000) return 0.846743;
+  else if(met < 120.000000) return 0.849624;
+  else if(met < 127.500000) return 0.857365;
+  else if(met < 135.000000) return 0.880115;
+  else if(met < 142.500000) return 0.887628;
+  else if(met < 150.000000) return 0.901220;
+  return 0.;
+}
+
+
+Float_t GetFSR_JECSF_Up(Float_t pt){
+  if(pt < 30.000000) pt = 25.000000;
+  if(pt > 600.000000) pt = 500.000000;
+  if     (pt < 40.000000) return 0.979243;
+  else if(pt < 50.000000) return 0.982352;
+  else if(pt < 60.000000) return 0.986535;
+  else if(pt < 70.000000) return 0.988623;
+  else if(pt < 80.000000) return 0.988428;
+  else if(pt < 90.000000) return 0.988755;
+  else if(pt < 100.000000) return 0.990513;
+  else if(pt < 120.000000) return 0.990323;
+  else if(pt < 140.000000) return 0.991124;
+  else if(pt < 160.000000) return 0.991252;
+  else if(pt < 200.000000) return 0.991535;
+  else if(pt < 300.000000) return 0.991364;
+  else if(pt < 400.000000) return 0.992071;
+  else if(pt < 600.000000) return 0.991727;
+  return 0.;
+}
+
+Float_t GetFSR_JECSF_Down(Float_t pt){
+  if(pt < 30.000000) pt = 25.000000;
+  if(pt > 600.000000) pt = 500.000000;
+  if     (pt < 40.000000) return 1.014638;
+  else if(pt < 50.000000) return 1.010785;
+  else if(pt < 60.000000) return 1.007884;
+  else if(pt < 70.000000) return 1.007436;
+  else if(pt < 80.000000) return 1.006743;
+  else if(pt < 90.000000) return 1.006262;
+  else if(pt < 100.000000) return 1.005350;
+  else if(pt < 120.000000) return 1.004019;
+  else if(pt < 140.000000) return 1.004930;
+  else if(pt < 160.000000) return 1.004365;
+  else if(pt < 200.000000) return 1.004370;
+  else if(pt < 300.000000) return 1.004626;
+  else if(pt < 400.000000) return 1.004728;
+  else if(pt < 600.000000) return 1.004745;
+  return 0.;
+}
+
+Float_t GetMetUnclWeightUp(Float_t met){
+  if(met < 20.000000) return 0.987000;
+  else if(met < 25.000000) return 0.986885;
+  else if(met < 30.000000) return 0.986851;
+  else if(met < 35.000000) return 0.986817;
+  else if(met < 40.000000) return 0.987062;
+  else if(met < 45.000000) return 0.987308;
+  else if(met < 50.000000) return 0.991306;
+  else if(met < 55.000000) return 0.995303;
+  else if(met < 60.000000) return 0.994664;
+  else if(met < 65.000000) return 0.994025;
+  else if(met < 70.000000) return 0.995359;
+  else if(met < 75.000000) return 0.996694;
+  else if(met < 80.000000) return 0.999391;
+  else if(met < 85.000000) return 1.002088;
+  else if(met < 90.000000) return 1.003458;
+  else if(met < 95.000000) return 1.004829;
+  else if(met < 100.000000) return 1.012460;
+  else if(met < 200.000000) return 1.020092;
+  else if(met > 200) return 1.020092;
+  return 0.;
+}
+
+Float_t GetMetUnclWeightDown(Float_t met){
+  if(met < 20.000000) return 1.0067;
+  else if(met < 25.000000) return 1.006760;
+  else if(met < 30.000000) return 1.006936;
+  else if(met < 35.000000) return 1.007112;
+  else if(met < 40.000000) return 1.005701;
+  else if(met < 45.000000) return 1.004291;
+  else if(met < 50.000000) return 1.003551;
+  else if(met < 55.000000) return 1.002811;
+  else if(met < 60.000000) return 1.002362;
+  else if(met < 65.000000) return 1.001913;
+  else if(met < 70.000000) return 1.002917;
+  else if(met < 75.000000) return 1.003921;
+  else if(met < 80.000000) return 0.999800;
+  else if(met < 85.000000) return 0.995679;
+  else if(met < 90.000000) return 0.996548;
+  else if(met < 95.000000) return 0.997417;
+  else if(met < 100.000000) return 0.994609;
+  else if(met < 200.000000) return 0.991801;
+  else if(met > 200) return 0.9918;
+  return 0.;
+}
+
+
+Float_t GetMuonEnergySigma(Float_t eta){
+  // https://twiki.cern.ch/twiki/bin/viewauth/CMS/MuonReferenceScaleResolRun2#Results_for_CMSSW_8_0_X_dataset
+  if(     eta > -2.4 && eta <= -2.1) return 0.017;
+  else if(eta > -2.1 && eta <= -1.2) return 0.009;
+  else if(eta > -1.2 && eta <=  1.2) return 0.004;
+  else if(eta >  1.2 && eta <=  2.1) return 0.009;
+  if(     eta >  2.1 && eta <=  2.4) return 0.017;
+  
+  cout << "[GetMuonEnergySigma] WARNING: muon eta out of range (" << eta << ")" << endl;
+  return 0;
+}
+
+Float_t GetMuonEnergyScale(){
+  // https://twiki.cern.ch/twiki/bin/viewauth/CMS/MuonReferenceScaleResolRun2#Results_for_CMSSW_8_0_X_dataset
+  return 0.02; // flat 0.2%
+}
+
+float GetCosTheta(TLorentzVector p1, TLorentzVector p2){
+  if(p1.P() == 0 || p2.P() == 0){
+    cout << "[GetCosTheta] ERROR: division by zero!!!! Returning 0... " << endl;
+    return 0;
+  }
+  return (p1.Px()*p2.Px() + p1.Py()*p2.Py() + p1.Pz()*p2.Pz() ) / ( p1.P()*p2.P() );
+}
+
+Float_t GetWeightPolLetf(TLorentzVector stop, TLorentzVector top, TLorentzVector lep){
+  float wL; float wR; float pL; float pR;
+
+  // Boost
+  TVector3 boost1(-stop.Px()/stop.Energy(),-stop.Py()/stop.Energy(),-stop.Pz()/stop.Energy());
+  top.Boost(boost1); lep.Boost(boost1);
+
+  float costh = GetCosTheta(top, lep);
+  pL = (top.Energy() + top.P()) * (1 - costh);
+  pR = (top.Energy() + top.P()) * (1 + costh);
+  wL = 2*pL/(pL + pR);
+  wR = 2*pR/(pL + pR);
+  return wL;
+} 
+
+Float_t GetWeightPolRight(TLorentzVector stop, TLorentzVector top, TLorentzVector lep){
+  float wL; float wR; float pL; float pR;
+
+  // Boost
+  TVector3 boost1(-stop.Px()/stop.Energy(),-stop.Py()/stop.Energy(),-stop.Pz()/stop.Energy());
+  top.Boost(boost1); lep.Boost(boost1);
+
+  float costh = GetCosTheta(top, lep);
+  pL = (top.Energy() + top.P()) * (1 - costh);
+  pR = (top.Energy() + top.P()) * (1 + costh);
+  wL = 2*pL/(pL + pR);
+  wR = 2*pR/(pL + pR);
+  return wR;
+} 
+
+
+  
+
+  
