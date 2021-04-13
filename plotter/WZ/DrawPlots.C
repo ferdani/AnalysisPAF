@@ -21,15 +21,15 @@ bool doLog;
 TString None         = "TNTightLeps == 3";
 TString AR           = "TIsSR == 1 && TNTightLeps < 3";
 TString SR           = "TIsSR == 1 && TNTightLeps == 3";
-TString SRVBS        = "TIsSRVBS == 1        && TNTightLeps >= 3 && TMinMll > 20 && TJet_Pt > 80 && TMET > 30";
-TString SRVBS_JEC_UP = "TIsSRVBS_JEC_UP == 1 && TNTightLeps >= 3 && TMinMll > 20 && TJet_Pt > 80 && TMET > 30";
-TString SRVBS_JEC_DO = "TIsSRVBS_JEC_DO == 1 && TNTightLeps >= 3 && TMinMll > 20 && TJet_Pt > 80 && TMET > 30";
+TString SRVBS        = "TIsSRVBS == 1        && TNTightLeps >= 3 && TMinMll > 20 && TNBtags == 0";
+TString SRVBS_JEC_UP = "TIsSRVBS_JEC_UP == 1 && TNTightLeps >= 3 && TMinMll > 20 && TNBtags == 0";
+TString SRVBS_JEC_DO = "TIsSRVBS_JEC_DO == 1 && TNTightLeps >= 3 && TMinMll > 20 && TNBtags == 0";
 //Strictly speaking you should vary everything UP/Down (commented until you rerun trees)
 //TString SRVBS_JEC_UP = "TIsSRVBS_JEC_UP == 1 && TNTightLeps >= 3 && TMinMll > 20 && TJet_Pt_JEC_UP > 80 && TMET_JEC_UP > 30";
 //TString SRVBS_JEC_DO = "TIsSRVBS_JEC_DO == 1 && TNTightLeps >= 3 && TMinMll > 20 && TJet_Pt_JEC_DO > 80 && TMET_JEC_DO > 30";
 
-TString SRVBS_BTG_UP = "TIsSRVBS_BTG_UP == 1 && TNTightLeps >= 3 && TMinMll > 20 && TJet_Pt > 80 && TMET > 30";
-TString SRVBS_BTG_DO = "TIsSRVBS_BTG_DO == 1 && TNTightLeps >= 3 && TMinMll > 20 && TJet_Pt > 80 && TMET > 30";
+TString SRVBS_BTG_UP = "TIsSRVBS_BTG_UP == 1 && TNTightLeps >= 3 && TMinMll > 20 && TNBtags == 0";
+TString SRVBS_BTG_DO = "TIsSRVBS_BTG_DO == 1 && TNTightLeps >= 3 && TMinMll > 20 && TNBtags == 0";
 TString SRmmm        = "TIsSR == 1 && TNTightLeps == 3 && TChannel == 3";
 TString SRmme        = "TIsSR == 1 && TNTightLeps == 3 && TChannel == 2";
 TString SRmee        = "TIsSR == 1 && TNTightLeps == 3 && TChannel == 1";
@@ -39,13 +39,13 @@ TString CRDY      = "TMath::Abs(TMll - 91.1876)< 15. && TNTightLeps == 3 && TLep
 TString CRTT      = "TMath::Abs(TMll - 91.1876)> 5. && TNTightLeps == 3 && TLep_PtZ1 > 25 && TLep_PtZ2 > 15 && TLep_PtW > 20 && TM3l > 100 && TMinMll > 4 && TNBtags > 0 && TMET > 30";
 
 TString CRDYmmm      = "TMath::Abs(TMll - 91.1876)< 15. && TNTightLeps == 3 && TLep_PtZ1 > 25 && TLep_PtZ2 > 15 && TLep_PtW > 20 && TM3l > 100 && TMinMll > 4 && TNBtags == 0 && TMET < 30 && TChannel == 3";
-TString CRTTmmm      = "TMath::Abs(TMll - 91.1876)> 5. && TNTightLeps == 3 && TLep_PtZ1 > 25 && TLep_PtZ2 > 15 && TLep_PtW > 20 && TM3l > 100 && TMinMll > 4 && TNBtags > 0 && TMET > 30 && TChannel == 3";
+TString CRTTmmm      = "TMath::Abs(TMll - 91.1876)> 5. && TNTightLeps == 3 && TLep_PtZ1 > 25 && TLep_PtZ2 > 15 && TLep_PtW > 20 && TM3l > 100 && TMinMll > 4 && TNBtags > 0 && TChannel == 3";
 TString CRDYmme      = "TMath::Abs(TMll - 91.1876)< 15. && TNTightLeps == 3 && TLep_PtZ1 > 25 && TLep_PtZ2 > 15 && TLep_PtW > 20 && TM3l > 100 && TMinMll > 4 && TNBtags == 0 && TMET < 30 && TChannel == 2";
-TString CRTTmme      = "TMath::Abs(TMll - 91.1876)> 5. && TNTightLeps == 3 && TLep_PtZ1 > 25 && TLep_PtZ2 > 15 && TLep_PtW > 20 && TM3l > 100 && TMinMll > 4 && TNBtags > 0 && TMET > 30 && TChannel == 2";
+TString CRTTmme      = "TMath::Abs(TMll - 91.1876)> 5. && TNTightLeps == 3 && TLep_PtZ1 > 25 && TLep_PtZ2 > 15 && TLep_PtW > 20 && TM3l > 100 && TMinMll > 4 && TNBtags > 0 && TChannel == 2";
 TString CRDYmee      = "TMath::Abs(TMll - 91.1876)< 15. && TNTightLeps == 3 && TLep_PtZ1 > 25 && TLep_PtZ2 > 15 && TLep_PtW > 20 && TM3l > 100 && TMinMll > 4 && TNBtags == 0 && TMET < 30 && TChannel == 1";
-TString CRTTmee      = "TMath::Abs(TMll - 91.1876)> 5. && TNTightLeps == 3 && TLep_PtZ1 > 25 && TLep_PtZ2 > 15 && TLep_PtW > 20 && TM3l > 100 && TMinMll > 4 && TNBtags > 0 && TMET > 30 && TChannel == 1";
+TString CRTTmee      = "TMath::Abs(TMll - 91.1876)> 5. && TNTightLeps == 3 && TLep_PtZ1 > 25 && TLep_PtZ2 > 15 && TLep_PtW > 20 && TM3l > 100 && TMinMll > 4 && TNBtags > 0 && TChannel == 1";
 TString CRDYeee      = "TMath::Abs(TMll - 91.1876)< 15. && TNTightLeps == 3 && TLep_PtZ1 > 25 && TLep_PtZ2 > 15 && TLep_PtW > 20 && TM3l > 100 && TMinMll > 4 && TNBtags == 0 && TMET < 30 && TChannel == 0";
-TString CRTTeee      = "TMath::Abs(TMll - 91.1876)> 5. && TNTightLeps == 3 && TLep_PtZ1 > 25 && TLep_PtZ2 > 15 && TLep_PtW > 20 && TM3l > 100 && TMinMll > 4 && TNBtags > 0 && TMET > 30 && TChannel == 0";
+TString CRTTeee      = "TMath::Abs(TMll - 91.1876)> 5. && TNTightLeps == 3 && TLep_PtZ1 > 25 && TLep_PtZ2 > 15 && TLep_PtW > 20 && TM3l > 100 && TMinMll > 4 && TNBtags > 0 && TChannel == 0";
 
 TString CRtop      = "TIsCRtop == 1 && TNTightLeps == 3";
 TString CRZZ      = "TIsCRZZ == 1 && TNTightLeps == 4";
@@ -470,16 +470,16 @@ void DrawPlot(TString var, TString cut, TString chan, Int_t nbins, Float_t bin0,
 
       // JEC ===================================================================
       p->SetCut(SRVBS_JEC_UP+ " && TConvNumber > 0");
-      p->AddSample("TGJets, TTGJets, WGToLNuG, ZGTo2LG, WZG", "X+#gamma", itSys, 1, "JEC_Up");
+      p->AddSample("TGJets, TTGJets, WGToLNuG, ZGTo2LG, WZG", "X+#gamma", itSys, 1, "UJEC");
       p->SetCut(SRVBS_JEC_UP);
-      p->AddSample("TTHnobb_pow, TTLLJets_m1to10,TTZToLLNuNu,TTWToLNu_ext1", "ttX",  itSys, 1, "JEC_Up");
-      p->AddSample("WWW, WWZ, WZZ, ZZZ, VHToNonbb",    "VVV/VV",  itSys, 1, "JEC_Up");
+      p->AddSample("TTHnobb_pow, TTLLJets_m1to10,TTZToLLNuNu,TTWToLNu_ext1", "ttX",  itSys, 1, "UJEC");
+      p->AddSample("WWW, WWZ, WZZ, ZZZ, VHToNonbb",    "VVV/VV",  itSys, 1, "UJEC");
 
       p->SetCut(SRVBS_JEC_DO+ " && TConvNumber > 0");
-      p->AddSample("TGJets, TTGJets, WGToLNuG, ZGTo2LG, WZG", "X+#gamma", itSys, 1, "JEC_Down");
+      p->AddSample("TGJets, TTGJets, WGToLNuG, ZGTo2LG, WZG", "X+#gamma", itSys, 1, "DJEC");
       p->SetCut(SRVBS_JEC_DO);
-      p->AddSample("TTHnobb_pow, TTLLJets_m1to10,TTZToLLNuNu,TTWToLNu_ext1", "ttX",  itSys, 1, "JEC_Down");
-      p->AddSample("WWW, WWZ, WZZ, ZZZ, VHToNonbb",    "VVV/VV",  itSys, 1, "JEC_Down");
+      p->AddSample("TTHnobb_pow, TTLLJets_m1to10,TTZToLLNuNu,TTWToLNu_ext1", "ttX",  itSys, 1, "DJEC");
+      p->AddSample("WWW, WWZ, WZZ, ZZZ, VHToNonbb",    "VVV/VV",  itSys, 1, "DJEC");
 
       p->SetCut(cut);
       p->SetWeight("TWeight");   
@@ -553,27 +553,27 @@ void DrawPlot(TString var, TString cut, TString chan, Int_t nbins, Float_t bin0,
       // JEC ===================================================================
       p->SetCut(SRVBS_JEC_UP);
 
-      p->AddSample("WZTo3LNu", "WZ",  itSys, 1,"JEC_Up");
+      p->AddSample("WZTo3LNu", "WZ",  itSys, 1,"UJEC");
       p->SetWeight("TWeight*0.338664");
-      p->AddSample("WZ_EWK_M60_part2", "VBS-WZ",  itSys, 1,"JEC_Up");
+      p->AddSample("WZ_EWK_M60_part2", "VBS-WZ",  itSys, 1,"UJEC");
       p->SetWeight("TWeight*0.661336");
-      p->AddSample("WZ_EWK_M60_part1", "VBS-WZ",  itSys, 1,"JEC_Up");
+      p->AddSample("WZ_EWK_M60_part1", "VBS-WZ",  itSys, 1,"UJEC");
       p->SetWeight("TWeight");
 
 
       p->SetCut(SRVBS_JEC_DO);
 
-      p->AddSample("WZTo3LNu", "WZ",  itSys, 1, "JEC_Down");
+      p->AddSample("WZTo3LNu", "WZ",  itSys, 1, "DJEC");
       p->SetWeight("TWeight*0.338664");
-      p->AddSample("WZ_EWK_M60_part2", "VBS-WZ",  itSys, 1,"JEC_Down");
+      p->AddSample("WZ_EWK_M60_part2", "VBS-WZ",  itSys, 1,"DJEC");
       p->SetWeight("TWeight*0.661336");
-      p->AddSample("WZ_EWK_M60_part1", "VBS-WZ",  itSys, 1,"JEC_Down");      
+      p->AddSample("WZ_EWK_M60_part1", "VBS-WZ",  itSys, 1,"DJEC");      
       
       p->SetWeight("TWeight");      
 
 
       // BTG ===================================================================
-      /*
+      
       p->SetCut(SRVBS_BTG_UP);
 
       p->AddSample("WZTo3LNu", "WZ",  itSys, 1,"BTG_Up");
@@ -590,7 +590,7 @@ void DrawPlot(TString var, TString cut, TString chan, Int_t nbins, Float_t bin0,
       p->AddSample("WZ_EWK_M60_part2", "VBS-WZ",  itSys, 1,"BTG_Down");
       p->SetWeight("TWeight*0.661336");
       p->AddSample("WZ_EWK_M60_part1", "VBS-WZ",  itSys, 1,"BTG_Down");
-      */
+      
       }
 
       p->SetCut(cut);
@@ -667,16 +667,16 @@ void DrawPlot(TString var, TString cut, TString chan, Int_t nbins, Float_t bin0,
     
     // JEC_Up ==================================================================
     p->SetCut(SRVBS_JEC_UP);
-    p->AddSample("ZZTo4L, GGHZZ4L",    "ZZ",  itSys, 1, "JEC_Up"); // RareSM
-    p->AddSample("tZq_ll, tZW_ll",    "tZX",  itSys, 1, "JEC_Up"); // RareSM 
+    p->AddSample("ZZTo4L, GGHZZ4L",    "ZZ",  itSys, 1, "UJEC"); // RareSM
+    p->AddSample("tZq_ll, tZW_ll",    "tZX",  itSys, 1, "UJEC"); // RareSM 
     // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // JEC_Down ================================================================
     p->SetCut(SRVBS_JEC_DO);
-    p->AddSample("ZZTo4L, GGHZZ4L",    "ZZ",  itSys, 1, "JEC_Down"); // RareSM
-    p->AddSample("tZq_ll, tZW_ll",    "tZX",  itSys, 1, "JEC_Down"); // RareSM 
+    p->AddSample("ZZTo4L, GGHZZ4L",    "ZZ",  itSys, 1, "DJEC"); // RareSM
+    p->AddSample("tZq_ll, tZW_ll",    "tZX",  itSys, 1, "DJEC"); // RareSM 
     // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    /*
+    
     // BTG_Up ==================================================================
     p->SetCut(SRVBS_BTG_UP);
     p->AddSample("ZZTo4L, GGHZZ4L",    "ZZ",  itSys, 1, "BTG_Up"); // RareSM
@@ -688,7 +688,7 @@ void DrawPlot(TString var, TString cut, TString chan, Int_t nbins, Float_t bin0,
     p->AddSample("ZZTo4L, GGHZZ4L",    "ZZ",  itSys, 1, "BTG_Down"); // RareSM
     p->AddSample("tZq_ll, tZW_ll",    "tZX",  itSys, 1, "BTG_Down"); // RareSM 
     // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    */
+    
     }
     p->SetCut(cut);
 
